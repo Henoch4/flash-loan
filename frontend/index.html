@@ -1,0 +1,173 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Flash Loan — One Block or Nothing on BOT Chain</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chivo:wght@400;700;900&family=Major+Mono+Display&family=Chivo+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@reown/appkit@1.8.21/dist/appkit.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@reown/appkit-adapter-ethers@1.8.21/dist/appkit-adapter-ethers.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+<style>
+:root{--motion-fast:200ms;--motion-base:600ms;--motion-slow:1100ms;--cc:#cfd1d0;--cc2:#bcbebd;--rd:#e10600;--bk:#101010}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--cc);color:var(--bk);font:400 16px/1.5 'Chivo',sans-serif;overflow-x:hidden;background-image:linear-gradient(var(--cc2) 1px,transparent 1px),linear-gradient(90deg,var(--cc2) 1px,transparent 1px);background-size:60px 60px}
+.mono{font-family:'Chivo Mono',monospace}a{color:inherit}
+nav{position:sticky;top:0;z-index:20;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:var(--bk);color:var(--cc);padding:10px 16px}
+.logo{font:400 18px 'Major Mono Display';color:var(--cc)}.wal{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.badge{background:var(--rd);color:#fff;font:700 12px 'Chivo Mono';padding:6px 10px}
+select{background:var(--bk);color:var(--cc);border:2px solid var(--cc);padding:6px 8px;font:700 12px 'Chivo Mono'}
+#connect,.btn{background:var(--rd);color:#fff;border:3px solid var(--bk);padding:11px 18px;font:900 14px 'Chivo';text-transform:uppercase;cursor:pointer;box-shadow:5px 5px 0 var(--bk);transition:.12s}
+nav #connect{border-color:var(--cc);box-shadow:none;padding:7px 14px}
+.btn:hover{transform:translate(3px,3px);box-shadow:2px 2px 0 var(--bk)}.btn.k{background:var(--bk)}
+.xl{display:inline-flex;gap:6px;align-items:center;text-decoration:none;font:700 12px 'Chivo Mono';color:var(--cc)}
+.hero{padding:6vh 4vw 0;position:relative}
+.launch{display:inline-block;background:var(--bk);color:var(--cc);font:700 12px 'Chivo Mono';padding:6px 10px;text-transform:uppercase}
+h1{font:900 clamp(70px,19vw,320px)/.8;letter-spacing:-.06em;text-transform:uppercase;margin:3vh 0 2vh}h1 .r{color:var(--rd)}h1 .o{-webkit-text-stroke:3px var(--bk);color:transparent}
+.sub{ grid-auto-fl grid-auto-flow:dense;ow:dense; grid-auto-fl grid-auto-flow:dense;ow:dense;display:grid;grid-template-columns:1fr 1fr;gap:4vw;max-width:1100px;margin-left:auto;align-items:end}.sub p{font-size:19px;font-weight:700}
+.blk{border:4px solid var(--bk);height:56px;position:relative;background:#fff;overflow:hidden}.blk i{position:absolute;inset:0;background:var(--rd);transform-origin:left;animation:fill 4s steps(40) infinite}.blk b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:700 14px 'Chivo Mono';mix-blend-mode:difference;color:#fff}
+@keyframes fill{0%{transform:scaleX(0)}90%{transform:scaleX(1)}100%{transform:scaleX(1)}}
+.tape{margin-top:6vh;background:repeating-linear-gradient(-45deg,var(--rd) 0 24px,var(--bk) 24px 48px);padding:10px 0;transform:rotate(-1.5deg);width:104%;margin-left:-2%;overflow:hidden}.tape div{background:var(--bk);color:var(--rd);font:700 14px 'Chivo Mono';white-space:nowrap;padding:6px 0;text-transform:uppercase}.tape span{display:inline-block;animation:mq 24s linear infinite}@keyframes mq{to{transform grid-auto-flow:dense;:tra grid-auto-fl grid-auto-flow:dense;ow:de grid-auto-flow:dense;nse; grid-auto-fl grid-auto-flow:dense;ow:dense;nslateX(-50%)}}
+.lanes{padding:10vh 4vw;display:grid;gap:0}
+.lane{display:grid;grid-template-columns:130px 1fr;border:4px solid var(--bk);background:var(--cc);margin-top:-4px;opacity:0;transform:translateX(-60px);transition:.7s cubic-bezier(.2,.8,.2,1)}.lane.in{opacity:1 grid-auto-flow:dense;;transform:none}.lane:nth-child(even){margin-left:8vw;background:#fff}.lane:nth-child(3){margin-left:3vw}
+.lane .n{background:var(--bk);color:var(--cc);font:900 90px/1 'Chivo';padding:10px;display:flex;align-items:flex-start;justify-content:center}.lane:nth-child(3) .n{background:var(--rd);color:#fff}
+.lane .c{padding:22px}.lane h3{font:900 34px/1 'Chivo';text-transform:uppercase;margin-bottom:6px}.lane p{max-width:520px;margin-bottom:14px;font-size:14px}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}input{border:3px solid var(--bk);background:#fff;padding:11px;font:700 14px 'Chivo Mono';min-width:0;flex:1 1 140px;max-width:260px}
+.out{margin-top:14px;font:700 13px/1.6 'Chivo Mono';white-space:pre-wrap;word-break:break-all;color:var(--rd)}
+.ledger{margin:0 4vw 10vh;border:4px solid var(--bk);background:var(--bk);color:var(--cc);padding:18px;font:400 13px/1.8 'Chivo Mono'}.ledger b{color:var(--rd)}
+footer{background:var(--bk);color:var(--cc);padding:22px 4vw 36px;display:flex;f grid-auto-flow:dense; grid-auto-flow:dense;lex-wrap:wrap;gap:8px 14px;font:400 12px 'Chivo Mono'}
+#toast{position:fixed;left:16px;bottom:16px;z-index:50;display:grid;gap:8px;max-width:calc(100vw - 32px)}.t{background:var(--bk);color:#fff;border-left:10px solid var(--cc);padding:12px 16px;font:700 13px 'Chivo Mono';transform:translateX(-120%);transition:.3s}.t.in{ grid-auto-flow:dense;transform:none}.t.err{border-color:var(--rd)}.t.ok{border-color:#2ecc40}.t.demo{border-color:#ffd400}
+@media(max-width:760px){.sub{grid-template-columns:1fr}.lane{grid-template-columns:1fr}.lane .n{font-size:44px}.lane:nth-child(n){margin-left:0}h1 .o{-webkit-text-stroke:2px var(--bk)}}
+
+@media(prefers-reduced-motion:reduce){.rv{transition:none!important;opacity:1;transform:none!important}*{animation:none!important}}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--acc,currentColor);outline-offset:2px}</style></head><body>
+<nav><div class="logo">FLASH/LOAN</div><div class="wal"><a class="xl" id="xl" href="javascript:void(0)" target="_blank" rel="noopener"></a><span class="badge">Chain ID <span class="chainid">677</span></span><select id="net"><option value="677">Mainnet 677</option><option value="968">Testnet 968</option></select><button id="connect" onclick="appkitConnect()" >Connect</button></div></nav>
+<section class="hero"><span class="launch">Built on BOT Chain Mainnet</span>
+<h1>Borrow.<br><span class="r">Use.</span> <span class="o">Repay.</span></h1>
+<div class="sub"><p>Instant, uncollateralized loans that live and die inside one block. No repayment? The whole thing reverts as if it never happened.</p><div><div class="blk"><i></i><b>BLOCK N — LOAN WINDOW</b></div></div></div>
+<div class="tape"><div><span id="mq"></span></div></div></section>
+<section class="lanes">
+<div class="lane"><div class="n">01</div><div class="c"><h3>requestFlashLoan</h3><p>Open a loan for any amount the pool holds. Returns a loan ID you must close in the same window.</p><div class="row"><input id="a1" type="number" step="any" placeholder="Amount (BOT)"><button class="btn" id="b1">Request</button></div><div class="out" id="o1"></div></div></div>
+<div class="lane"><div class="n">02</div><div class="c"><h3>executeFlashLoan</h3><p>Run your strategy and repay principal + fee. Settles the loan and returns the collateral-free float.</p><div class="row"><input id="a2" type="number" placeholder="Loan ID"><button class="btn" id="b2">Execute</button></div><div class="out" id="o2"></div></div></div>
+<div class="lane"><div class="n">!</div><div class="c"><h3>failFlashLoan</h3><p>Mark an unrepaid loan as failed so the pool can reconcile. The red lane.</p><div class="row"><input id="a3" type="number" placeholder="Loan ID"><button class="btn k" id="b3">Fail loan</button></div><div class="out" id="o3"></div></div></div>
+<div class="lane"><div class="n">%</div><div class="c"><h3>setDefaultFee</h3><p>Admin: set the default fee charged per loan, in basis points.</p><div class="row"><input id="a4" type="number" placeholder="Fee bps (e.g. 9)"><button class="btn k" id="b4">Set fee</button></div><div class="out" id="o4"></div></div></div>
+</section>
+<div class="ledger rv" id="ledger"></div>
+<footer><span>Flash Loan — Instant uncollateralized loans settled within one block on BOT Chain</span><span>&#8226; Chain ID <b>677</b> &#8226; Contract <span class="mono">0xCA…</span></span><span>&#8226; <a href="https://botchain.ai" target="_blank" rel="noopener">BOT Chain Website</a> &#8226; <a href="https://scan.botchain.ai/" target="_blank" rel="noopener">BOTScan Explorer</a></span></footer>
+<div id="toast"></div>
+<script>
+const X_URL='https://x.com/TODO_handle'; // TODO: set project X handle
+const CA={677:'0xCA…TODO',968:''}; // TODO: set deployed contract addresses
+const CHAINS={677:{hex:'0x2a5',name:'BOT Chain Mainnet',rpc:'https://rpc.botchain.ai',ex:'https://scan.botchain.ai'},968:{hex:'0x3c8',name:'BOT Chain Testnet',rpc:'https://rpc.bohr.life',ex:null}};
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+let provider=null,signer=null,account=null,chain=677;
+const short=a=>a?a.slice(0,6)+'…'+a.slice(-4):'';
+function toast(m,t){const el=$('#toast');const d=document.createElement('div');d.className='t '+(t||'');d.textContent=m;el.appendChild(d);setTimeout(()=>d.classList.add('in'),10);setTimeout(()=>{d.classList.remove('in');setTimeout(()=>d.remove(),400)},4200)}
+async function switchChain(id){const c=CHAINS[id];if(!window.ethereum)return;
+ try{await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:c.hex}]})}
+ catch(e){if(e.code===4902||(e.data&&e.data.originalError&&e.data.originalError.code===4902)||/unrecognized|not added/i.test(explainError(e)||'')){
+  const p={chainId:c.hex,chainName:c.name,nativeCurrency:{name:'BOT',symbol:'BOT',decimals:18},rpcUrls:[c.rpc]};if(c.ex)p.blockExplorerUrls=[c.ex];
+  await window.ethereum.request({method:'wallet_addEthereumChain',params:[p]})}else throw e}}
+, true);
+
+// ===== Phase B: AppKit + GSAP runtime =====
+const PROJECT_ID='f018499b1e4a94d961ab67aeeeff3254';
+const CA677='0x0000000000000000000000000000000000000000';
+const NETS={677:{label:'Mainnet 677',rpc:'https://rpc.botchain.ai',hex:'0x2a5',ca:CA677},968:{label:'Testnet 968',rpc:'https://rpc.bohr.life',hex:'0x3c8',ca:'0x0000000000000000000000000000000000000000'}};
+let appkit=null, currentNet=677;
+
+async function initAppKit(){
+  try{
+    const {createAppKit}=window;
+    const {EthersAdapter}=window;
+    const adapter=new EthersAdapter();
+    appkit=createAppKit({
+      adapters:[adapter],
+      networks:[
+        {id:677,name:'BOT Mainnet',nativeCurrency:{name:'BOT',symbol:'BOT',decimals:18},rpcUrls:{default:{http:['https://rpc.botchain.ai']}}},
+        {id:968,name:'BOT Testnet',nativeCurrency:{name:'BOT',symbol:'BOT',decimals:18},rpcUrls:{default:{http:['https://rpc.bohr.life']}}}
+      ],
+      projectId:PROJECT_ID,
+      features:{analytics:false}
+    });
+    appkit.subscribeAccount((a)=>{const addr=a.address||null;const b=$('#connect')||$('#connectBtn')||$('#walletBtn')||$('#wbtn');if(b)b.textContent=addr?addr.slice(0,6)+'…'+addr.slice(-4):'Connect wallet';const m=$('#mode')||$('#modeTag');if(m)m.textContent=addr?'LIVE':'DEMO';});
+    appkit.subscribeNetwork((n)=>{if(n&&n.chainId){currentNet=Number(n.chainId);const b=$('#badge')||$('#cid')||$('#chainBadge')||$('#netpill');if(b)b.textContent='Chain ID '+currentNet;}});
+  }catch(e){console.warn('AppKit init failed',e);}
+}
+async function appkitConnect(){
+  if(!appkit)await initAppKit();
+  if(appkit){try{await appkit.open();}catch(e){toast('AppKit connect failed: '+(explainError(e)||e.code),'err');}return;}
+  // Fallback: raw ethers connect
+  if(!window.ethereum){toast('No wallet found - install a Web3 wallet',true);return;}
+  try{const accts=await window.ethereum.request({method:'eth_requestAccounts'});setWallet(accts.length>0,accts[0]);provider=new ethers.BrowserProvider(window.ethereum);signer=await provider.getSigner();await ensureChain();initContract();}catch(e){toast('Wallet connect: '+ (explainError(e)||e.code),true);}}
+function setWallet(connected,addr){const b=$('#connect')||$('#connectBtn')||$('#walletBtn')||$('#wbtn');if(b)b.textContent=addr?addr.slice(0,6)+'…'+addr.slice(-4):'Connect wallet';b.classList.toggle('connected',!!addr);}
+function initContract(){if(!currentNet){return;}try{const provider=new ethers.JsonRpcProvider(NETS[currentNet].rpc);const abi=[];contract=new ethers.Contract(NETS[currentNet].ca,abi,signer||provider);}catch(e){console.warn('contract init',e);contract=null;}}
+async function ensureChain(){if(!window.ethereum)return;try{const cid=await window.ethereum.request({method:'eth_chainId'});currentNet=Number(cid);if(NETS[currentNet]){}else{try{await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:'0x2a5'}]});currentNet=677;}catch(sw){if(sw.code===4902){try{await window.ethereum.request({method:'wallet_addEthereumChain',params:[{chainId:'0x2a5',chainName:'BOT Chain Mainnet',nativeCurrency:{name:'BOT',symbol:'BOT',decimals:18},rpcUrls:['https://rpc.botchain.ai']}]})}catch(ae){toast('Add chain failed: '+(aexplainError(e)||ae.code),'err');}}}else{toast('Switch rejected: '+(sw.message||sw.code),'err');}}}catch(e){currentNet=677;}}
+
+function explainError(e){if(!e)return 'Unknown error';const m=explainError(e)||explainError(e)||(e.data&&e.data.message)||'';if(e.code===4001)return 'Transaction rejected in wallet. Nothing spent on-chain.';let msg=String(m||explainError(e)||String(e));msg=msg.replace(/^execution reverted:/i,'').trim();if(msg.length>170)msg=msg.slice(0,167)+'...';return msg;}
+// ===== Phase B: AppKit + GSAP runtime =====
+const PROJECT_ID='f018499b1e4a94d961ab67aeeeff3254';
+const CA677='0x0000000000000000000000000000000000000000';
+const NETS={677:{label:'Mainnet 677',rpc:'https://rpc.botchain.ai',hex:'0x2a5',ca:CA677},968:{label:'Testnet 968',rpc:'https://rpc.bohr.life',hex:'0x3c8',ca:'0x0000000000000000000000000000000000000000'}};
+let appkit=null, currentNet=677, contract=null, signer=null;
+
+async function initAppKit(){
+  try{
+    const {createAppKit}=window;
+    const {EthersAdapter}=window;
+    const adapter=new EthersAdapter();
+    appkit=createAppKit({
+      adapters:[adapter],
+      networks:[
+        {id:677,name:'BOT Mainnet',nativeCurrency:{name:'BOT',symbol:'BOT',decimals:18},rpcUrls:{default:{http:['https://rpc.botchain.ai']}}},
+        {id:968,name:'BOT Testnet',nativeCurrency:{name:'BOT',symbol:'BOT',decimals:18},rpcUrls:{default:{http:['https://rpc.bohr.life']}}}
+      ],
+      projectId:PROJECT_ID,
+      features:{analytics:false}
+    });
+    appkit.subscribeAccount((a)=>{const addr=a.address||null;const b=$('#connect')||$('#connectBtn')||$('#walletBtn')||$('#wbtn');if(b)b.textContent=addr?addr.slice(0,6)+'…'+addr.slice(-4):'Connect wallet';const m=$('#mode')||$('#modeTag');if(m)m.textContent=addr?'LIVE':'DEMO';});
+    appkit.subscribeNetwork((n)=>{if(n&&n.chainId){currentNet=Number(n.chainId);const b=$('#badge')||$('#cid')||$('#chainBadge')||$('#netpill');if(b)b.textContent='Chain ID '+currentNet;}});
+  }catch(e){console.warn('AppKit init failed',e);}
+}
+async function appkitConnect(){
+  if(!appkit)await initAppKit();
+  if(appkit){try{await appkit.open();}catch(e){toast('AppKit connect failed: '+(e.message||e.code),'err');return;}}
+  if(!window.ethereum){toast('No wallet found - install a Web3 wallet',true);return;}
+  try{const accts=await window.ethereum.request({method:'eth_requestAccounts'});setWallet(accts.length>0,accts[0]);provider=new ethers.BrowserProvider(window.ethereum);signer=await provider.getSigner();await ensureChain();initContract();}catch(e){toast('Wallet connect: '+(e.message||e.code),true);}
+}
+function setWallet(connected,addr){const b=$('#connect')||$('#connectBtn')||$('#walletBtn')||$('#wbtn');if(b)b.textContent=addr?addr.slice(0,6)+'…'+addr.slice(-4):'Connect wallet';b.classList.toggle('connected',!!addr);}
+function initContract(){if(!currentNet){return;}try{const provider=new ethers.JsonRpcProvider(NETS[currentNet].rpc);contract=new ethers.Contract(NETS[currentNet].ca,[],signer||provider);}catch(e){console.warn('contract init',e);contract=null;}}
+async function ensureChain(){if(!window.ethereum)return;try{const cid=await window.ethereum.request({method:'eth_chainId'});currentNet=Number(cid);if(!NETS[currentNet]){try{await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:'0x2a5'}]})}catch(sw){if(sw.code===4902){try{await window.ethereum.request({method:'wallet_addEthereumChain',params:[{chainId:'0x2a5',chainName:'BOT Chain Mainnet',nativeCurrency:{name:'BOT',symbol:'BOT',decimals:18},rpcUrls:['https://rpc.botchain.ai']}]})}catch(ae){toast('Add chain failed: '+(ae.message||ae.code),'err');}}}else{toast('Switch rejected: '+(sw.message||sw.code),'err');}}}catch(e){currentNet=677;}}
+
+function explainError(e){if(!e)return 'Unknown error';const m=e.shortMessage||e.reason||(e.data&&e.data.message)||'';if(e.code===4001)return 'Transaction rejected in wallet. Nothing spent on-chain.';let msg=String(m||e.message||String(e));msg=msg.replace(/^execution reverted:/i,'').trim();if(msg.length>170)msg=msg.slice(0,167)+'...';return msg;}
+
+async function sendTx(btn,fnName,args,valueEth,label){if(!contract||!signer){toast('Connect wallet first',true);return}const resting=btn.textContent;btn.disabled=true;btn.classList.add('busy');btn.textContent='Confirm in wallet...';try{if(!currentNet)await ensureChain();const usable=contract.connect(signer);const tx=valueEth!=null?await usable[fnName](...args,{value:ethers.parseEther(String(valueEth))}):await usable[fnName](...args);const rc=await tx.wait();toast((label||fnName)+' confirmed on '+(currentNet?currentNet.label:'chain'));return tx;}catch(e){toast(explainError(e),true);throw e;}finally{btn.disabled=false;btn.classList.remove('busy');btn.textContent=resting;}}
+
+function initGSAP(){
+  if(typeof gsap==='undefined')return;
+  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(reduced){document.querySelectorAll('.rv').forEach(el=>{el.style.opacity='1';el.style.transform='none';});return;}
+  gsap.registerPlugin(ScrollTrigger);
+  gsap.from('.rv',{opacity:0,y:26,duration:0.7,ease:'expo.out',stagger:0.07});
+  gsap.utils.toArray('.rv').forEach(el=>{gsap.from(el,{opacity:0,y:34,duration:0.8,ease:'expo.out',scrollTrigger:{trigger:el,start:'top 85%'},clearProps:'all'});});
+}
+
+function addBusyStates(){
+  document.addEventListener('click',function(e){const btn=e.target.closest('button');if(btn&&!btn.classList.contains('busy')&&!btn.disabled){btn.disabled=true;btn.classList.add('busy');const origText=btn.textContent;btn.textContent='Confirming...';setTimeout(()=>{btn.disabled=false;btn.classList.remove('busy');btn.textContent=origText;},5000);}},true);
+}
+
+function addAria(){
+  document.querySelectorAll('button').forEach(b=>{if(!b.getAttribute('aria-label')&&!b.getAttribute('aria-labelledby')){b.setAttribute('aria-label',b.textContent.trim()||'button');}});
+  document.querySelectorAll('input,select,textarea').forEach(el=>{if(!el.getAttribute('aria-label')&&!el.getAttribute('aria-labelledby')){const lab=el.previousElementSibling;if(lab&&lab.tagName==='LABEL'){el.setAttribute('aria-labelledby',lab.id||(lab.id='lab-'+Math.random().toString(36).slice(2)));}});
+}
+
+if(window.ethereum&&window.ethereum.on){
+  window.ethereum.on('accountsChanged',(a)=>{
+    const b=$('#connect')||$('#connectBtn')||$('#walletBtn')||$('#wbtn');
+    if(b)b.textContent=a&&a[0]?a[0].slice(0,6)+'…'+a[0].slice(-4):'Connect wallet';
+  });
+  window.ethereum.on('chainChanged',(id)=>{
+    const n=parseInt(id,16);
+    const b=$('#badge')||$('#cid')||$('#chainBadge')||$('#netpill');
+    if(b)b.textContent='Chain ID '+n;
+  });
+}</script></body></html>

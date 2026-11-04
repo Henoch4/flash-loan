@@ -1,10 +1,10 @@
 # FlashLoan
 
-Inspect and manage the contract’s loan records. This prototype does not implement an atomic flash-loan callback.
+Borrow native BOT through a receiver contract that repays principal plus fee in the same transaction. A failed repayment reverts the whole operation.
 
 ## Mainnet status
 
-Mainnet deployment is pending. The interface does not simulate transactions or balances.
+Contract on BOT Chain mainnet (677): [0xeE37Ec67bedbA1b3F82b3bd2A746CC986FCCD0eE](https://scan.botchain.ai/address/0xeE37Ec67bedbA1b3F82b3bd2A746CC986FCCD0eE).
 
 Wallet actions require BOT Chain mainnet, deployed bytecode, and a connected compatible wallet. Every action is simulated before a transaction review; only a subsequent wallet confirmation can send it.
 
@@ -19,12 +19,13 @@ Wallet actions require BOT Chain mainnet, deployed bytecode, and a connected com
 
 ## Contract interface
 
-`frontend/product.json` uses the ABI compiled from the current Solidity source.
+`frontend/product.json` uses the current-source ABI, matched against the deployed mainnet runtime bytecode. Explorer source publication is tracked separately.
 
 | Action | Contract signature |
 |---|---|
 | Execute your loan | `executeFlashLoan(uint256)` |
 | Close a failed loan | `failFlashLoan(uint256)` |
+| Execute an atomic loan | `flashLoan(address,uint256,bytes)` |
 | Fund the reserve (owner only) | `fundVault()` |
 | Request a loan | `requestFlashLoan(uint256,uint256)` |
 | Set the loan fee (owner only) | `setDefaultFee(uint256)` |

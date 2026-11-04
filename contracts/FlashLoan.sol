@@ -19,6 +19,9 @@ abstract contract Ownable {
     function owner() public view returns (address) { return _owner; }
 }
 
+interface INativeFlashReceiver {
+    function onFlashLoan(address initiator,uint256 amount,uint256 fee,bytes calldata data) external payable returns(bytes32);
+}
 contract FlashLoan is ReentrancyGuard, Ownable {
     struct Loan {
         address borrower;
@@ -30,7 +33,8 @@ contract FlashLoan is ReentrancyGuard, Ownable {
     Loan[] public loans;
     uint256 public totalVolume;
     uint256 public totalFees;
-    uint256 public defaultFeeBps;
+    uint256 public defaultFeeBps = 9;
+    bytes32 public constant CALLBACK_SUCCESS = keccak256("BOTChain.NativeFlashLoan");
 
     event LoanRequested(uint256 indexed lid, address indexed borrower, uint256 amount, uint256 feeBps);
     event LoanExecuted(uint256 indexed lid, address indexed borrower, uint256 amount, uint256 fee);
@@ -38,7 +42,9 @@ contract FlashLoan is ReentrancyGuard, Ownable {
     event VaultFunded(address indexed funder, uint256 amount);
     event FeesWithdrawn(address indexed to, uint256 amount);
 
-    function setDefaultFee(uint256 bps) external onlyOwner { defaultFeeBps = bps; }
+    event AtomicLoanExecuted(address indexed initiator,address indexed receiver,uint256 amount,uint256 fee);
+    receive() external payable {}
+    function setDefaultFee(uint256 bps) external onlyOwner { require(bps<=1000,"Fee exceeds 10 percent");defaultFeeBps = bps; }
 
     // FIX: there was no funding mechanism at all, so a flash loan could never be
     // honoured. Owner (demo treasury) seeds the vault; everything repaid stays here.
@@ -59,6 +65,7 @@ contract FlashLoan is ReentrancyGuard, Ownable {
 
     function requestFlashLoan(uint256 amount, uint256 feeBps) external nonReentrant returns (uint256) {
         require(amount > 0, "Zero amount");
+        require(feeBps <= 1000, "Fee exceeds 10 percent");
         Loan storage l = loans.push();
         l.borrower = msg.sender;
         l.amount = amount;
@@ -74,21 +81,23 @@ contract FlashLoan is ReentrancyGuard, Ownable {
         Loan storage l = loans[lid];
         require(!l.executed, "Already executed");
         require(l.borrower == msg.sender, "Not your loan");
-        require(address(this).balance >= l.amount, "Insufficient vault");
-        uint256 fee = (l.amount * l.feeBps) / 10000;
-        // FIX: execution previously only set flags/counters — no funds ever moved,
-        // so there was no borrow/repay loop at all. The vault now sends the
-        // principal to the borrower and requires principal + fee back before the
-        // tx ends, so the borrower's callback must repay atomically (one-tx loop).
-        // The fee never leaves the vault (owner withdrawable), it is not burned.
-        uint256 startBal = address(this).balance;
-        (bool ok, ) = msg.sender.call{value: l.amount}("");
-        require(ok, "ETH transfer failed");
-        require(address(this).balance >= startBal + fee, "Principal+fee not repaid");
-        totalVolume += l.amount;
-        totalFees += fee;
         l.executed = true;
+        uint256 fee = _execute(msg.sender,msg.sender,l.amount,l.feeBps,"");
         emit LoanExecuted(lid, msg.sender, l.amount, fee);
+    }
+
+    function flashLoan(address receiver,uint256 amount,bytes calldata data) external nonReentrant {
+        _execute(receiver,msg.sender,amount,defaultFeeBps,data);
+    }
+    function _execute(address receiver,address initiator,uint256 amount,uint256 feeBps,bytes memory data) private returns(uint256 fee) {
+        require(receiver.code.length>0&&amount>0,"Invalid receiver or amount");
+        uint256 beforeBalance=address(this).balance;
+        require(amount<=beforeBalance,"Insufficient vault");
+        fee=(amount*feeBps+9999)/10000;
+        require(INativeFlashReceiver(receiver).onFlashLoan{value:amount}(initiator,amount,fee,data)==CALLBACK_SUCCESS,"Invalid callback");
+        require(address(this).balance>=beforeBalance+fee,"Principal and fee not repaid");
+        totalVolume+=amount;totalFees+=fee;
+        emit AtomicLoanExecuted(initiator,receiver,amount,fee);
     }
 
     function failFlashLoan(uint256 lid) external {
